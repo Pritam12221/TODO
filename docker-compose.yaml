@@ -1,0 +1,18 @@
+version: "3.6"
+
+services:
+  db:
+    image: postgres:16
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=local
+      - POSTGRES_PASSWORD=local
+      - POSTGRES_DB=mercury-dev
+    networks:
+      - api_network
+
+networks:
+  api_network:
