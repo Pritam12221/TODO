@@ -5,25 +5,16 @@ import (
 	model "TODO/models"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CreateTodo(c *gin.Context) {
-	sessionID := c.GetHeader("session_id")
 
-	if sessionID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing session"})
-		return
-	}
-
-	userID, err := dbhelper.GetUserFromSession(sessionID)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
-		return
-	}
-
+	userID := c.GetString("user_id") 
+	
 	var todoReq model.Todo
 
 	if err := c.ShouldBindJSON(&todoReq); err != nil {
@@ -40,18 +31,9 @@ func CreateTodo(c *gin.Context) {
 	c.JSON(http.StatusCreated, todo)
 }
 
+
 func UpdateTodo(c *gin.Context) {
-  sessionID := c.GetHeader("session_id")
-  if sessionID == "" {
-   c.JSON(http.StatusUnauthorized, gin.H{"error": "missing session"})
-   return
-  }
-  //get userid from session
-  userID, err := dbhelper.GetUserFromSession(sessionID)
-  if err != nil {
-   c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
-   return
-  }
+userID := c.GetString("user_id") 
 
   todoID := c.Param("id")
   if todoID == "" {
@@ -65,12 +47,10 @@ func UpdateTodo(c *gin.Context) {
    return
   }
 
-err = dbhelper.UpdateTodoRequest(todoID, userID, req)
+err:= dbhelper.UpdateTodoRequest(todoID,userID,req)
+
 if err != nil {
-	if err.Error() == "todo not found or already deleted" {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
+	
 	c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update todo"})
 	return
 }
@@ -81,17 +61,7 @@ c.JSON(http.StatusOK, gin.H{
 
 
  func DeleteTodo(c *gin.Context) {
-  sessionID := c.GetHeader("session_id")
-  if sessionID == "" {
-   c.JSON(http.StatusUnauthorized, gin.H{"error": "missing session"})
-   return
-  }
-
-  userID, err := dbhelper.GetUserFromSession(sessionID)
-  if err != nil {
-   c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
-   return
-  }
+userID := c.GetString("user_id") 
 
   todoID := c.Param("id")
   if todoID == "" {
@@ -113,19 +83,7 @@ c.JSON(http.StatusOK, gin.H{
 
 
  func GetTodoById(c *gin.Context){
-   sessionID := c.GetHeader("session_id")
-
-  if sessionID == "" {
-   c.JSON(http.StatusUnauthorized, gin.H{"error": "missing session"})
-   return
-  }
-
-  userID, err := dbhelper.GetUserFromSession(sessionID)
-  if err != nil {
-   c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
-   return
-  }
-
+userID := c.GetString("user_id") 
   todoID := c.Param("id")
   if todoID == "" {
    c.JSON(http.StatusBadRequest, gin.H{"error": "todo id is required"})
@@ -154,26 +112,16 @@ c.JSON(http.StatusOK, gin.H{
 
 
 func GetTodos(c *gin.Context) {
-	sessionID := c.GetHeader("session_id")
-	if sessionID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing session"})
-		return
-	}
 
-	userID, err := dbhelper.GetUserFromSession(sessionID)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
-		return
-	}
-
+	userID := c.GetString("user_id") 
 	status := c.Query("status")
+	// search := c.Query("search")
 
 	todos, err := dbhelper.GetTodosByStatus(userID, status)
 	if err != nil {
-		if err.Error() == "invalid status" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
+
+		fmt.Println("er")
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch todos"})
 		return
 	}

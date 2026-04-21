@@ -79,7 +79,7 @@ func LoginUser(c *gin.Context) {
 
 func LogoutUser(c *gin.Context) {
 	
-	sessionID := c.GetHeader("session_id")
+	sessionID := c.GetString("session_id")
 
 	if sessionID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Logout failed"})

@@ -3,8 +3,11 @@ package dbhelper
 import (
 	db "TODO/database"
 	model "TODO/models"
+	"database/sql"
 	"errors"
 	"log"
+
+	// "strings"
 	"time"
 )
 
@@ -15,26 +18,87 @@ func CreateTodo(userID, name, description string, expiringAt *time.Time) (model.
 		RETURNING id, name, description, complete, expiring_at, created_at
 	`
 	var todo model.Todo
-	err := db.Todo.QueryRow(query, userID, name, description, expiringAt).Scan(
-		&todo.ID, &todo.Name, &todo.Description, &todo.Complete, &todo.ExpiringAt, &todo.CreatedAt,
-	)
+	err := db.Todo.Get(&todo,query, userID, name, description, expiringAt)
 	return todo, err
 }
 
-func UpdateTodoRequest(todoID, userID string, req model.UpdateTodoRequest) error {
-	query := `
-		UPDATE todos
-		SET
-			name        = $1,
-			description = $2,
-			complete    = $3,
-			expiring_at = $4
-		WHERE id = $5 
-		  AND user_id = $6 
-		  AND archived_at IS NULL
-	`
 
-	result, err := db.Todo.Exec(
+// func UpdateTodoRequest(todoID, userID string,req model.UpdateTodoRequest) error {
+
+// 	setParts := []string{}
+// 	args := []interface{}{}
+// 	i := 1
+
+// 	if req.Name != nil {
+// 		setParts = append(setParts, fmt.Sprintf("name = $%d", i))
+// 		args = append(args, *req.Name)
+// 		i++
+// 	}
+
+// 	if req.Description != nil {
+// 		setParts = append(setParts, fmt.Sprintf("description = $%d", i))
+// 		args = append(args, *req.Description)
+// 		i++
+// 	}
+
+// 	if req.Complete != nil {
+// 		setParts = append(setParts, fmt.Sprintf("complete = $%d", i))
+// 		args = append(args, *req.Complete)
+// 		i++
+// 	}
+
+// 	if req.ExpiringAt != nil {
+// 		setParts = append(setParts, fmt.Sprintf("expiring_at = $%d", i))
+// 		args = append(args, *req.ExpiringAt)
+// 		i++
+// 	}
+
+	
+// 	if len(setParts) == 0 {
+// 		return errors.New("no fields to update")
+// 	}
+
+	
+// 	query := fmt.Sprintf(`
+// 		UPDATE todos
+// 		SET %s
+// 		WHERE id = $%d AND user_id = $%d AND archived_at IS NULL
+// 	`, strings.Join(setParts, ", "), i, i+1)
+
+// 	args = append(args, todoID, userID)
+// 	res, err := db.Todo.Exec(query, args...)
+
+// 	if err != nil {
+// 	fmt.Println("DB ERROR:", err)
+// 	fmt.Println("QUERY:", query)
+// 	fmt.Println("ARGS:", args)
+// 		return err
+// 	}
+
+// 	rows, err := res.RowsAffected()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	if rows == 0 {
+// 		return sql.ErrNoRows
+// 	}
+
+// 	return nil
+// }
+
+
+func UpdateTodoRequest(todoID, userID string, req model.UpdateTodoRequest)  (error) {
+ query := `
+  UPDATE todos
+  SET
+   name        = COALESCE($1, name),
+   description = COALESCE($2, description),
+   complete    = COALESCE($3, complete),
+   expiring_at = COALESCE($4, expiring_at)
+  WHERE id = $5 AND user_id = $6
+ `
+res, err := db.Todo.Exec(
 		query,
 		req.Name,
 		req.Description,
@@ -47,17 +111,19 @@ func UpdateTodoRequest(todoID, userID string, req model.UpdateTodoRequest) error
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 
-	if rowsAffected == 0 {
-		return errors.New("todo not found or already deleted")
+	if rows == 0 {
+		return sql.ErrNoRows
 	}
 
 	return nil
 }
+
+
 
 func DeleteTodo(todoID, userID string) error {
  query := `
@@ -68,6 +134,7 @@ func DeleteTodo(todoID, userID string) error {
 		  AND archived_at IS NULL
 	`
  result, err := db.Todo.Exec(query, todoID, userID)
+	
  if err != nil {
   return err
  }
@@ -97,34 +164,59 @@ func GetTodoById(userID, todoID string) (model.Todo, error) {
 
 
 
-func GetTodosByStatus(userID, status string) ([]model.Todo, error) {
-	baseQuery := `
+func GetTodosByStatus(userID string,status string) ([]model.Todo, error) {
+
+	query := `
 		SELECT id, name, description, complete, expiring_at, created_at, archived_at
 		FROM todos
 		WHERE user_id = $1
 		  AND archived_at IS NULL
 	`
-log.Println("kam kargyi")
-	var query string
 
+	// args := []interface{}{userID}
+	// i := 2
+
+	// if search != "" {
+	// 	query += fmt.Sprintf(`
+	// 		AND (name ILIKE $%d OR description ILIKE $%d)
+	// 	`, i, i)
+	// 	args = append(args, "%"+search+"%")
+	// 	i++
+	// }
+
+	
 	switch status {
 	case "incomplete":
-		query = baseQuery + " AND complete = false AND (expiring_at IS NULL OR expiring_at < NOW()) ORDER BY created_at DESC"
+		query += `
+			AND complete = false 
+			AND (expiring_at IS NULL OR expiring_at < NOW())
+		`
 
 	case "pending":
-		query = baseQuery + " AND complete = false AND (expiring_at IS NULL OR expiring_at > NOW()) ORDER BY created_at DESC"
+		query += `
+			AND complete = false 
+			AND (expiring_at IS NULL OR expiring_at > NOW())
+		`
 
 	case "completed":
-		query = baseQuery + " AND complete = true ORDER BY created_at DESC"
-
+		query += `
+			AND complete = true
+		`
+//get all todo
 	case "":
-		query = baseQuery + " ORDER BY created_at DESC"
+		
 
 	default:
 		return nil, errors.New("invalid status")
 	}
 
-	var todos []model.Todo
-	err := db.Todo.Select(&todos, query, userID)
+	
+	// // query += `
+	// // 	ORDER BY created_at DESC
+	// // 	LIMIT 10
+	// `
+
+	var todos =make([]model.Todo,0)
+	err := db.Todo.Select(&todos, query)
 	return todos, err
 }
