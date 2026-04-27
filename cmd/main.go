@@ -3,9 +3,11 @@ package main
 import (
 	db "TODO/database"
 	s "TODO/server"
-	"github.com/joho/godotenv"
+	"TODO/utils"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -14,10 +16,6 @@ func main() {
 	if err != nil {
 		log.Println(".env file not found")
 	}
-
-	log.Println("host check", os.Getenv("DB_HOST"))
-	log.Println("port check", os.Getenv("DB_PORT"))
-
 	err = db.ConnectAndMigrate(
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_PORT"),
@@ -29,7 +27,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	//intiate jwt
+	utils.InitJWT()
 	srv := s.ServerRoutes()
 	srv.Run()
 }
