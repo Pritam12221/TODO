@@ -1,12 +1,11 @@
 package middleware
 
 import (
+	database "TODO/database/dbhelper"
+	model "TODO/models"
 	"database/sql"
-	"net/http"
-
-	"TODO/database"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -15,17 +14,14 @@ func AuthMiddleware() gin.HandlerFunc {
 		sessionID := c.GetHeader("session_id")
 		if sessionID == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"sessiod id":"session dalo na",
+				"sessiod id": "session dalo na",
 			})
 			return
 		}
 
 		var userID string
 
-		query := `
-			SELECT user_id	FROM user_session WHERE id = $1 AND archived_at IS NULL`
-
-		err := database.Todo.QueryRow(query, sessionID).Scan(&userID)
+		userID, err := database.GetUserIDBySession(sessionID)
 		if err != nil {
 
 			if err == sql.ErrNoRows {
@@ -39,9 +35,15 @@ func AuthMiddleware() gin.HandlerFunc {
 				"error": "database error",
 			})
 			return
-		}	
-		c.Set("user_id", userID)
-		c.Set("session_id",sessionID)
+		}
+
+		var auth model.AuthContext
+		auth.UserID = userID
+		auth.SessionID = sessionID
+		c.Set("auth", auth)
+
+		// c.Set("user_id", userID)
+		// c.Set("session_id", sessionID) //set this up in object
 
 		c.Next()
 	}

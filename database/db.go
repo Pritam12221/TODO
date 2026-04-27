@@ -36,7 +36,6 @@ func ConnectAndMigrate(host, port, dbName, user, password string, sslMode SSLMod
 }
 
 func migrateUp(db *sqlx.DB) error {
-	fmt.Println("Starting database migrations...")
 
 	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
 	if err != nil {
@@ -61,7 +60,7 @@ func migrateUp(db *sqlx.DB) error {
 		return fmt.Errorf("migration failed: %w", err)
 	}
 
-	fmt.Println("Migrations applied successfully")
+	fmt.Println("Migration check")
 	return nil
 }
 

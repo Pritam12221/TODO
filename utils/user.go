@@ -1,10 +1,11 @@
 package utils
 
 import (
+	model "TODO/models"
 
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
-
 
 func HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword(
@@ -22,4 +23,14 @@ func CheckPassword(hashedPassword, plainPassword string) error {
 		[]byte(hashedPassword),
 		[]byte(plainPassword),
 	)
+}
+
+func GetAuth(c *gin.Context) (model.AuthContext, bool) {
+	val, exists := c.Get("auth")
+	if !exists {
+		return model.AuthContext{}, false
+	}
+
+	auth, ok := val.(model.AuthContext)
+	return auth, ok
 }

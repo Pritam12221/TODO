@@ -3,21 +3,18 @@ package main
 import (
 	db "TODO/database"
 	s "TODO/server"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
 
-	
 	err := godotenv.Load("../.env")
 	if err != nil {
 		log.Println(".env file not found")
 	}
 
-	
 	log.Println("host check", os.Getenv("DB_HOST"))
 	log.Println("port check", os.Getenv("DB_PORT"))
 
@@ -32,7 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-	srv:=s.ServerRoutes();
-	srv.Run();
+
+	srv := s.ServerRoutes()
+	srv.Run()
 }

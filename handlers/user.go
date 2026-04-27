@@ -4,6 +4,7 @@ import (
 	"TODO/database/dbhelper"
 	model "TODO/models"
 	"TODO/utils"
+	util "TODO/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,21 +13,20 @@ import (
 func RegisterUser(c *gin.Context) {
 	var req model.UserRequest
 
-	
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	exists, _:= dbhelper.IsUserExist(req.Email)
-	if exists {
-		c.JSON(http.StatusConflict, gin.H{"error":"User alreaady exists"})
+	isExists, _ := dbhelper.IsUserExist(req.Email)
+	if isExists {
+		c.JSON(http.StatusConflict, gin.H{"error": "User alreaady exists"})
 		return
 	}
 
 	// Hash password
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -78,8 +78,13 @@ func LoginUser(c *gin.Context) {
 }
 
 func LogoutUser(c *gin.Context) {
-	
-	sessionID := c.GetString("session_id")
+
+	auth, ok := util.GetAuth(c)
+	if !ok {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+	sessionID := auth.SessionID
 
 	if sessionID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Logout failed"})

@@ -11,7 +11,7 @@ import (
 
 func IsUserExist(email string) (bool, error) {
 	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE email=$1)`
+	query := `SELECT EXISTS(SELECT 1 FROM users WHERE email=$1)` //count() >0
 	err := db.Todo.Get(&exists, query, email)
 	return exists, err
 }
@@ -26,10 +26,10 @@ func CreateUser(name, email, password string) (string, error) {
 }
 
 func CreateUserSession(userID string) (string, error) {
-	SQL := `INSERT INTO user_session(user_id)
+	query := `INSERT INTO user_session(user_id)
 			VALUES ($1) RETURNING id;`
 	var sessionID string
-	err := db.Todo.Get(&sessionID, SQL, userID)
+	err := db.Todo.Get(&sessionID, query, userID)
 	if err != nil {
 		return "", err
 	}
@@ -37,14 +37,15 @@ func CreateUserSession(userID string) (string, error) {
 }
 
 func GetUserByEmail(email, password string) (string, error) {
-	SQL := `
+	query := `
 		SELECT id, password
 		FROM users
 		WHERE email = $1 AND archived_at IS NULL;
 	`
 	var user models.UserExist
 
-	err := db.Todo.Get(&user, SQL, email)
+	err := db.Todo.Get(&user, query, email)
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", errors.New("no user exist")
@@ -68,22 +69,9 @@ func DeleteUserSession(sessionID string) error {
 	return err
 }
 
-func GetUserFromSession(sessionID string) (string, error) {
-	query := `
-		SELECT user_id
-		FROM user_session
-		WHERE id = $1 AND archived_at IS NULL
-	`
-
-	var userID string
-	err := db.Todo.Get(&userID, query, sessionID)
-	return userID, err
-}
-
-
 func GetTodoByID(userID, todoID string) (models.Todo, error) {
 	query := `
-		SELECT id, name, description, complete, expiring_at, created_at
+		SELECT id, name, description, is_complete, expiring_at, created_at
 		FROM todos
 		WHERE id = $1 AND user_id = $2 AND archived_at IS NULL
 	`
@@ -92,4 +80,17 @@ func GetTodoByID(userID, todoID string) (models.Todo, error) {
 
 	err := db.Todo.Get(&todo, query, todoID, userID)
 	return todo, err
-}	
+}
+
+func GetUserIDBySession(sessionID string) (string, error) {
+	var userID string
+
+	query := `
+		SELECT user_id 
+		FROM user_session 
+		WHERE id = $1 AND archived_at IS NULL
+	`
+
+	err := db.Todo.Get(&userID, query, sessionID)
+	return userID, err
+}

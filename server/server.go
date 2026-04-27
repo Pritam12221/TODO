@@ -8,26 +8,31 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ServerRoutes()*gin.Engine{
+func ServerRoutes() *gin.Engine {
 
 	r := gin.Default()
 
-	serverCheck :=r.Group("/v1")
+	serverCheck := r.Group("/v1")
 	{
-	serverCheck.POST("/health", func(c *gin.Context) {
+		serverCheck.POST("/health", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"status": "server chalrha",
 			})
 		})
 	}
-		
-	userRoutes := r.Group("/v1")
+
+	userRoutes := r.Group("/v1/user")
 	{
 		userRoutes.POST("/register", handlers.RegisterUser)
 		userRoutes.POST("/login", handlers.LoginUser)
 	}
 
-	
+	adminRoutes := r.Group("/v1/admin")
+	{
+		adminRoutes.PATCH("/:id/isSuspended", handlers.SuspendUser)
+		adminRoutes.GET("/todos", handlers.GetAllTodos)
+	}
+
 	userAuth := r.Group("/v1")
 	userAuth.Use(middleware.AuthMiddleware())
 	{
@@ -38,5 +43,5 @@ func ServerRoutes()*gin.Engine{
 		userAuth.GET("/todo/:id", handlers.GetTodoById)
 		userAuth.GET("/todos", handlers.GetTodos)
 	}
-	return r;
+	return r
 }
