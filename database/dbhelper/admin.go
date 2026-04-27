@@ -3,6 +3,7 @@ package dbhelper
 import (
 	db "TODO/database"
 	model "TODO/models"
+	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -62,12 +63,61 @@ func GetAllTodos(status string, search string, limit int, offset int) ([]model.T
 	return todos, err
 }
 
-func SuspendUser(userID string) error {
+func SuspendUser(userID string) (err error) {
+
+	tx, err := db.Todo.Beginx()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
 	query := `
 		UPDATE users
 		SET is_suspended = true
 		WHERE id = $1
 	`
+
+	res, err := tx.Exec(query, userID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	query = `
+		UPDATE user_session
+		SET archived_at = NOW()
+		WHERE user_id = $1 AND archived_at IS NULL
+	`
+
+	_, err = tx.Exec(query, userID)
+	return err
+}
+
+func UnsuspendUser(userID string) error {
+
+	query := `
+		UPDATE users
+		SET is_suspended = false
+		WHERE id = $1
+	`
 	_, err := db.Todo.Exec(query, userID)
+
 	return err
 }

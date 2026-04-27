@@ -21,15 +21,18 @@ func ServerRoutes() *gin.Engine {
 		})
 	}
 
-	userRoutes := r.Group("/v1/user")
+	userRoutes := r.Group("/v1")
 	{
 		userRoutes.POST("/register", handlers.RegisterUser)
 		userRoutes.POST("/login", handlers.LoginUser)
+		userRoutes.POST("/renew", handlers.RenewToken)
 	}
 
 	adminRoutes := r.Group("/v1/admin")
+	adminRoutes.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
 	{
-		adminRoutes.PATCH("/:id/isSuspended", handlers.SuspendUser)
+		adminRoutes.PATCH("/:id/suspend", handlers.SuspendUser)
+		adminRoutes.PATCH("/:id/unsuspend", handlers.UnsuspendUser)
 		adminRoutes.GET("/todos", handlers.GetAllTodos)
 	}
 

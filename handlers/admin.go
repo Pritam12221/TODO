@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"TODO/database/dbhelper"
-	// "TODO/utils"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -48,18 +47,12 @@ func GetAllTodos(c *gin.Context) {
 }
 
 func SuspendUser(c *gin.Context) {
+
 	userID := c.Param("id")
-
-	// auth, ok := utils.GetAuth(c)
-	// if !ok {
-	// 	c.JSON(401, gin.H{"error": "unauthorized"})
-	// 	return
-	// }
-
-	// if auth.Role != "admin" {
-	// 	c.JSON(403, gin.H{"error": "forbidden"})
-	// 	return
-	// }
+	if userID == "" {
+		c.JSON(400, gin.H{"error": "user id required"})
+		return
+	}
 
 	err := dbhelper.SuspendUser(userID)
 	if err != nil {
@@ -67,5 +60,26 @@ func SuspendUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "user suspended successfully"})
+	c.JSON(200, gin.H{
+		"message": "user suspended successfully",
+	})
+}
+
+func UnsuspendUser(c *gin.Context) {
+
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(400, gin.H{"error": "user id required"})
+		return
+	}
+
+	err := dbhelper.UnsuspendUser(userID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to unsuspend user"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "user unsuspended successfully",
+	})
 }

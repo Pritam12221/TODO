@@ -2,11 +2,10 @@ package dbhelper
 
 import (
 	db "TODO/database"
+	models "TODO/models"
 	"TODO/utils"
 	"database/sql"
 	"errors"
-
-	models "TODO/models"
 )
 
 func IsUserExist(email string) (bool, error) {
@@ -36,27 +35,30 @@ func CreateUserSession(userID string) (string, error) {
 	return sessionID, nil
 }
 
-func GetUserByEmail(email, password string) (string, error) {
+func GetUserByEmail(email, password string) (models.User, error) {
+
 	query := `
-		SELECT id, password
+		SELECT id, password, role, is_suspended
 		FROM users
 		WHERE email = $1 AND archived_at IS NULL;
 	`
-	var user models.UserExist
+
+	var user models.User
 
 	err := db.Todo.Get(&user, query, email)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", errors.New("no user exist")
+			return models.User{}, errors.New("no user exist")
 		}
-		return "", err
+		return models.User{}, err
 	}
 
 	if err := utils.CheckPassword(user.Password, password); err != nil {
-		return "", errors.New("invalid credentials")
+		return models.User{}, errors.New("invalid credentials")
 	}
-	return user.ID, nil
+
+	return user, nil
 }
 
 func DeleteUserSession(sessionID string) error {
@@ -93,4 +95,18 @@ func GetUserIDBySession(sessionID string) (string, error) {
 
 	err := db.Todo.Get(&userID, query, sessionID)
 	return userID, err
+}
+
+func GetUserByID(userID string) (models.User, error) {
+
+	var user models.User
+
+	query := `
+		SELECT id, name, email, role, is_suspended
+		FROM users
+		WHERE id = $1 AND archived_at IS NULL
+	`
+
+	err := db.Todo.Get(&user, query, userID)
+	return user, err
 }

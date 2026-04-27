@@ -1,6 +1,7 @@
 package models
 
 import "time"
+import "github.com/golang-jwt/jwt/v5"
 
 type UserRequest struct {
 	Username string `json:"username" db:"username" binding:"required,min=3"`
@@ -46,10 +47,10 @@ type UserExist struct {
 	Password string `db:"password"`
 }
 
-type AuthContext struct {
-	UserID    string
-	SessionID string
-}
+// type AuthContext struct {
+// 	UserID    string
+// 	SessionID string
+// }
 
 type Role string
 
@@ -58,9 +59,9 @@ const (
 	RoleEmployee Role = "employee"
 )
 
-// type User struct {
-// 	ID          string `db:"id"`
-// 	Email       string `db:"email"`
-// 	Role        Role   `db:"role"`
-// 	IsSuspended bool   `db:"is_suspended"`
-// }
+type Claims struct {
+	UserID    string `json:"user_id"`
+	Role      string `json:"role"`
+	SessionID string `json:"session_id"`
+	jwt.RegisteredClaims
+}

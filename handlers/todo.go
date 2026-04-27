@@ -15,12 +15,11 @@ import (
 
 func CreateTodo(c *gin.Context) {
 
-	auth, ok := util.GetAuth(c)
+	user, ok := util.GetUserFromContext(c)
 	if !ok {
 		c.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
-	userID := auth.UserID
 
 	var todoReq model.Todo
 
@@ -29,7 +28,7 @@ func CreateTodo(c *gin.Context) {
 		return
 	}
 
-	todo, err := dbhelper.CreateTodo(userID, todoReq.Name, todoReq.Description, todoReq.ExpiringAt)
+	todo, err := dbhelper.CreateTodo(user.ID, todoReq.Name, todoReq.Description, todoReq.ExpiringAt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create todo"})
 		return
@@ -39,12 +38,11 @@ func CreateTodo(c *gin.Context) {
 }
 
 func UpdateTodo(c *gin.Context) {
-	auth, ok := util.GetAuth(c)
+	user, ok := util.GetUserFromContext(c)
 	if !ok {
 		c.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
-	userID := auth.UserID
 
 	todoID := c.Param("id")
 	if todoID == "" {
@@ -58,7 +56,7 @@ func UpdateTodo(c *gin.Context) {
 		return
 	}
 
-	err := dbhelper.UpdateTodoRequest(todoID, userID, req)
+	err := dbhelper.UpdateTodoRequest(todoID, user.ID, req)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update todo"})
@@ -71,12 +69,11 @@ func UpdateTodo(c *gin.Context) {
 }
 
 func DeleteTodo(c *gin.Context) {
-	auth, ok := util.GetAuth(c)
+	user, ok := util.GetUserFromContext(c)
 	if !ok {
 		c.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
-	userID := auth.UserID
 	todoID := c.Param("id")
 
 	if todoID == "" {
@@ -84,7 +81,7 @@ func DeleteTodo(c *gin.Context) {
 		return
 	}
 
-	err := dbhelper.DeleteTodo(todoID, userID)
+	err := dbhelper.DeleteTodo(todoID, user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete todo"})
 		return
@@ -94,19 +91,18 @@ func DeleteTodo(c *gin.Context) {
 }
 
 func GetTodoById(c *gin.Context) {
-	auth, ok := util.GetAuth(c)
+	user, ok := util.GetUserFromContext(c)
 	if !ok {
 		c.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
-	userID := auth.UserID
 	todoID := c.Param("id")
 	if todoID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "todo id is required"})
 		return
 	}
 
-	todo, err := dbhelper.GetTodoByID(userID, todoID)
+	todo, err := dbhelper.GetTodoByID(user.ID, todoID)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -127,12 +123,11 @@ func GetTodoById(c *gin.Context) {
 
 func GetTodos(c *gin.Context) {
 
-	auth, ok := util.GetAuth(c)
+	user, ok := util.GetUserFromContext(c)
 	if !ok {
 		c.JSON(401, gin.H{"error": "unauthorized"})
 		return
 	}
-	userID := auth.UserID
 	status := c.Query("status")
 	search := c.Query("search")
 
@@ -150,7 +145,7 @@ func GetTodos(c *gin.Context) {
 
 	offset := (page - 1) * limit
 
-	todos, err := dbhelper.GetTodosByStatus(userID, status, search, limit, offset)
+	todos, err := dbhelper.GetTodosByStatus(user.ID, status, search, limit, offset)
 	if err != nil {
 
 		fmt.Println("er")

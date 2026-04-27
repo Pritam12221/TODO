@@ -139,7 +139,7 @@ func DeleteTodo(todoID, userID string) error {
 		return err
 	}
 	if rows == 0 {
-		return errors.New("todo not found")
+		return sql.ErrNoRows
 	}
 	return nil
 }
