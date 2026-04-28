@@ -27,8 +27,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//intiate jwt
+
+	//intiate jwt pass
 	utils.InitJWT()
+
 	//routes
 	srv := s.ServerRoutes()
 	srv.Run()
