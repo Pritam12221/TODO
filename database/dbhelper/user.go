@@ -10,7 +10,7 @@ import (
 
 func IsUserExist(email string) (bool, error) {
 	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE email=$1)` //count() >0
+	query := `SELECT COUNT(*) > 0 FROM users WHERE email = $1` //count() >0
 	err := db.Todo.Get(&exists, query, email)
 	return exists, err
 }

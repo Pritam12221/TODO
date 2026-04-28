@@ -7,11 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-
-	// "strings"
 	"time"
 )
 
+// create a todo
 func CreateTodo(userID, name, description string, expiringAt *time.Time) (model.Todo, error) {
 	query := `
 		INSERT INTO todos (user_id, name, description, expiring_at)
@@ -23,68 +22,7 @@ func CreateTodo(userID, name, description string, expiringAt *time.Time) (model.
 	return todo, err
 }
 
-// func UpdateTodoRequest(todoID, userID string,req model.UpdateTodoRequest) error {
-
-// 	setParts := []string{}
-// 	args := []any{}
-// 	i := 1
-
-// 	if req.Name != nil {
-// 		setParts = append(setParts, fmt.Sprintf("name = $%d", i))
-// 		args = append(args, *req.Name)
-// 		i++
-// 	}
-
-// 	if req.Description != nil {
-// 		setParts = append(setParts, fmt.Sprintf("description = $%d", i))
-// 		args = append(args, *req.Description)
-// 		i++
-// 	}
-
-// 	if req.is_complete != nil {
-// 		setParts = append(setParts, fmt.Sprintf("is_complete = $%d", i))
-// 		args = append(args, *req.is_complete)
-// 		i++
-// 	}
-
-// 	if req.ExpiringAt != nil {
-// 		setParts = append(setParts, fmt.Sprintf("expiring_at = $%d", i))
-// 		args = append(args, *req.ExpiringAt)
-// 		i++
-// 	}
-
-// 	if len(setParts) == 0 {
-// 		return errors.New("no fields to update")
-// 	}
-
-// 	query := fmt.Sprintf(`
-// 		UPDATE todos
-// 		SET %s
-// 		WHERE id = $%d AND user_id = $%d AND archived_at IS NULL
-// 	`, strings.Join(setParts, ", "), i, i+1)
-
-// 	args = append(args, todoID, userID)
-// 	res, err := db.Todo.Exec(query, args...)
-
-// 	if err != nil {
-// 	fmt.Println("DB ERROR:", err)
-// 	fmt.Println("QUERY:", query)
-// 	fmt.Println("ARGS:", args)
-// 		return err
-// 	}
-
-// 	rows, err := res.RowsAffected()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if rows == 0 {
-// 		return sql.ErrNoRows
-// 	}
-
-// 	return nil
-// }
-
+// updates the todo
 func UpdateTodoRequest(todoID, userID string, req model.UpdateTodoRequest) error {
 	query := `
   UPDATE todos
@@ -181,13 +119,13 @@ func GetTodosByStatus(userID string, status string, search string, limit int, of
 	switch status {
 	case "incomplete":
 		query += `
-			AND is_complete = false 
+			AND is_complete = false
 			AND (expiring_at IS NULL OR expiring_at < NOW())
 		`
 
 	case "pending":
 		query += `
-			AND is_complete = false 
+			AND is_complete = false
 			AND (expiring_at IS NULL OR expiring_at > NOW())
 		`
 
@@ -213,3 +151,49 @@ func GetTodosByStatus(userID string, status string, search string, limit int, of
 	err := db.Todo.Select(&todos, query, args...)
 	return todos, err
 }
+
+// func GetTodosByStatus(userID string, status model.TodoStatus, search string, limit int, offset int) ([]model.Todo, error) {
+
+// 	// Optional validation
+// 	if status != "" &&
+// 		status != model.StatusCompleted &&
+// 		status != model.StatusPending &&
+// 		status != model.StatusIncomplete {
+// 		return nil, errors.New("invalid status")
+// 	}
+
+// 	query := `
+// 		SELECT id, name, description, is_complete, expiring_at, created_at, archived_at
+// 		FROM todos
+// 		WHERE user_id = $1
+// 		  AND archived_at IS NULL
+// 		  AND (
+// 			$2 = '' OR
+// 			($2 = 'completed' AND is_complete = true) OR
+// 			($2 = 'pending' AND is_complete = false AND (expiring_at IS NULL OR expiring_at > NOW())) OR
+// 			($2 = 'incomplete' AND is_complete = false AND (expiring_at IS NULL OR expiring_at < NOW()))
+// 		  )
+// 	`
+
+// 	args := []any{userID, string(status)}
+// 	i := 3
+
+// 	if search != "" {
+// 		query += fmt.Sprintf(`
+// 			AND (name ILIKE $%d OR description ILIKE $%d)
+// 		`, i, i)
+// 		args = append(args, "%"+search+"%")
+// 		i++
+// 	}
+
+// 	query += fmt.Sprintf(`
+// 		ORDER BY created_at DESC
+// 		LIMIT $%d OFFSET $%d
+// 	`, i, i+1)
+
+// 	args = append(args, limit, offset)
+
+// 	var todos []model.Todo
+// 	err := db.Todo.Select(&todos, query, args...)
+// 	return todos, err
+// }

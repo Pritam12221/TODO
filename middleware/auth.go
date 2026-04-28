@@ -21,6 +21,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		//split bearer and token
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
@@ -56,7 +57,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Cross-check token vs DB
+		// Cross-check token with DB
 		if userID != claims.UserID {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "token mismatch",
@@ -80,29 +81,6 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// var userID string
-
-		// userID, err := database.GetUserIDBySession(sessionID)
-		// if err != nil {
-
-		// 	if err == sql.ErrNoRows {
-		// 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-		// 			"error": "invalid or expired session",
-		// 		})
-		// 		return
-		// 	}
-
-		// 	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-		// 		"error": "database error",
-		// 	})
-		// 	return
-		// }
-
-		// var auth model.AuthContext
-		// auth.UserID = userID
-		// auth.SessionID = sessionID
-		// c.Set("auth", auth)
-		// c.Set("user_id", userID)
 		c.Set("session_id", sessionID)
 		c.Set("user", user)
 

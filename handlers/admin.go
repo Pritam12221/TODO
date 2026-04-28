@@ -10,13 +10,6 @@ import (
 )
 
 func GetAllTodos(c *gin.Context) {
-
-	// auth, ok := utils.GetAuth(c)
-	// if !ok {
-	// 	c.JSON(401, gin.H{"error": "unauthorized"})
-	// 	return
-	// }
-
 	status := c.Query("status")
 	search := c.Query("search")
 
@@ -81,5 +74,24 @@ func UnsuspendUser(c *gin.Context) {
 
 	c.JSON(200, gin.H{
 		"message": "user unsuspended successfully",
+	})
+}
+
+func FetchAllUsers(c *gin.Context) {
+
+	limitStr := c.DefaultQuery("limit", "10")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, _ := strconv.Atoi(limitStr)
+	offset, _ := strconv.Atoi(offsetStr)
+
+	users, err := dbhelper.FetchAllUsers(limit, offset)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to fetch users"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"users": users,
 	})
 }

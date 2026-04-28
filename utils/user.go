@@ -15,6 +15,7 @@ func InitJWT() {
 	jwtKey = []byte(os.Getenv("JWT_SECRET"))
 }
 
+// encode the pass
 func HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword(
 		[]byte(password),
@@ -26,6 +27,7 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
+// decode the pass with salt and algo
 func CheckPassword(hashedPassword, plainPassword string) error {
 	return bcrypt.CompareHashAndPassword(
 		[]byte(hashedPassword),
@@ -33,6 +35,7 @@ func CheckPassword(hashedPassword, plainPassword string) error {
 	)
 }
 
+// generate new jwt token
 func GenerateToken(userID, role, sessionID string) (string, error) {
 
 	claims := model.Claims{
@@ -40,7 +43,7 @@ func GenerateToken(userID, role, sessionID string) (string, error) {
 		Role:      role,
 		SessionID: sessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
@@ -49,6 +52,7 @@ func GenerateToken(userID, role, sessionID string) (string, error) {
 	return token.SignedString(jwtKey)
 }
 
+// parses jwt + structure validation logic
 func ParseToken(tokenStr string) (*model.Claims, error) {
 
 	token, err := jwt.ParseWithClaims(tokenStr, &model.Claims{}, func(token *jwt.Token) (interface{}, error) {
@@ -67,19 +71,7 @@ func ParseToken(tokenStr string) (*model.Claims, error) {
 	return claims, nil
 }
 
-func ParseTokenAllowExpired(tokenStr string) (*model.Claims, error) {
-
-	token, err := jwt.ParseWithClaims(tokenStr, &model.Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
-
-	if claims, ok := token.Claims.(*model.Claims); ok {
-		return claims, nil
-	}
-
-	return nil, err
-}
-
+// get user model from context and check validation (for todos)
 func GetUserFromContext(c *gin.Context) (model.User, bool) {
 	u, exists := c.Get("user")
 	if !exists {

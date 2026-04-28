@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-
+	//setting up env
 	err := godotenv.Load("../.env")
 	if err != nil {
 		log.Println(".env file not found")
@@ -29,6 +29,7 @@ func main() {
 	}
 	//intiate jwt
 	utils.InitJWT()
+	//routes
 	srv := s.ServerRoutes()
 	srv.Run()
 }

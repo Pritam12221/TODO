@@ -47,16 +47,11 @@ type UserExist struct {
 	Password string `db:"password"`
 }
 
-// type AuthContext struct {
-// 	UserID    string
-// 	SessionID string
-// }
-
 type Role string
 
 const (
-	RoleAdmin    Role = "admin"
-	RoleEmployee Role = "employee"
+	RoleAdmin Role = "admin"
+	RoleUser  Role = "user"
 )
 
 type Claims struct {

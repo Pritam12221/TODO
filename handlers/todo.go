@@ -17,7 +17,7 @@ func CreateTodo(c *gin.Context) {
 
 	user, ok := util.GetUserFromContext(c)
 	if !ok {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -71,7 +71,7 @@ func UpdateTodo(c *gin.Context) {
 func DeleteTodo(c *gin.Context) {
 	user, ok := util.GetUserFromContext(c)
 	if !ok {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 	todoID := c.Param("id")

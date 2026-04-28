@@ -16,6 +16,7 @@ func RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	//check  user exist or not
 	isExists, _ := dbhelper.IsUserExist(req.Email)
 	if isExists {
 		c.JSON(http.StatusConflict, gin.H{"error": "User alreaady exists"})
@@ -43,12 +44,8 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// c.JSON(http.StatusCreated, gin.H{
-	// 	"user_id":    userID,
-	// 	"session_id": sessionID,
-	// })
-
-	token, err := utils.GenerateToken(userID, "employee", sessionID)
+	//genrate a new token for auto login
+	token, err := utils.GenerateToken(userID, "user", sessionID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to generate token"})
 		return
@@ -59,6 +56,7 @@ func RegisterUser(c *gin.Context) {
 	})
 }
 
+// login user
 func LoginUser(c *gin.Context) {
 	var req model.LoginRequest
 
@@ -84,11 +82,7 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 
-	// 	c.JSON(http.StatusOK, gin.H{
-	// 		"user":       "User logedin",
-	// 		"session_id": sessionID,
-	// 	})
-
+	//generate a token
 	token, err := utils.GenerateToken(user.ID, string(user.Role), sessionID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to generate token"})
@@ -120,40 +114,21 @@ func LogoutUser(c *gin.Context) {
 
 func RenewToken(c *gin.Context) {
 
-	// Get Authorization header
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		c.JSON(401, gin.H{"error": "missing token"})
-		return
-	}
-
-	// Extract token
-	tokenStr := authHeader
-	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
-		tokenStr = authHeader[7:]
-	}
-
-	// Parse token even if expired
-	claims, err := utils.ParseTokenAllowExpired(tokenStr)
-	if err != nil {
-		c.JSON(401, gin.H{"error": "invalid token"})
-		return
-	}
-
-	sessionID := claims.SessionID
+	// Get session id from header
+	sessionID := c.GetHeader("session_id")
 	if sessionID == "" {
-		c.JSON(401, gin.H{"error": "invalid session in token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing session id"})
 		return
 	}
 
-	// Validate session
+	// get user id from session
 	userID, err := dbhelper.GetUserIDBySession(sessionID)
 	if err != nil {
-		c.JSON(401, gin.H{"error": "invalid or expired session"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
 		return
 	}
 
-	//  Fetch user
+	//  user validation
 	user, err := dbhelper.GetUserByID(userID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "user not found"})

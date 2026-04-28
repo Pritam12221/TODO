@@ -3,9 +3,8 @@ package server
 import (
 	handlers "TODO/handlers"
 	"TODO/middleware"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func ServerRoutes() *gin.Engine {
@@ -20,7 +19,7 @@ func ServerRoutes() *gin.Engine {
 			})
 		})
 	}
-
+	//user routes
 	userRoutes := r.Group("/v1")
 	{
 		userRoutes.POST("/register", handlers.RegisterUser)
@@ -28,14 +27,17 @@ func ServerRoutes() *gin.Engine {
 		userRoutes.POST("/renew", handlers.RenewToken)
 	}
 
+	//admin auth routes
 	adminRoutes := r.Group("/v1/admin")
 	adminRoutes.Use(middleware.AuthMiddleware(), middleware.AdminMiddleware())
 	{
 		adminRoutes.PATCH("/:id/suspend", handlers.SuspendUser)
 		adminRoutes.PATCH("/:id/unsuspend", handlers.UnsuspendUser)
 		adminRoutes.GET("/todos", handlers.GetAllTodos)
+		adminRoutes.GET("/users", handlers.FetchAllUsers)
 	}
 
+	//user auth routes
 	userAuth := r.Group("/v1")
 	userAuth.Use(middleware.AuthMiddleware())
 	{

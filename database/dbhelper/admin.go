@@ -64,7 +64,6 @@ func GetAllTodos(status string, search string, limit int, offset int) ([]model.T
 }
 
 func SuspendUser(userID string) (err error) {
-
 	tx, err := db.Todo.Beginx()
 	if err != nil {
 		return err
@@ -120,4 +119,20 @@ func UnsuspendUser(userID string) error {
 	_, err := db.Todo.Exec(query, userID)
 
 	return err
+}
+
+func FetchAllUsers(limit, offset int) ([]model.User, error) {
+	var users []model.User
+
+	SQL := `SELECT id, name, email, created_at,role
+        FROM users
+        WHERE archived_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2;`
+
+	err := db.Todo.Select(&users, SQL, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
