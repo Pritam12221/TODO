@@ -1,7 +1,10 @@
 package models
 
-import "time"
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
 
 type UserRequest struct {
 	Username string `json:"username" db:"username" binding:"required,min=3"`
@@ -13,6 +16,17 @@ type User struct {
 	Name        string     `json:"name" db:"name"`
 	Password    string     `json:"password" db:"password"`
 	ID          string     `json:"id" db:"id"`
+	Email       string     `json:"email" db:"email"`
+	Role        Role       `json:"role" db:"role"`
+	IsSuspended bool       `json:"is_suspended" db:"is_suspended"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	ArchivedAt  *time.Time `json:"archived_at" db:"archived_at"`
+}
+
+// to get all user for admins
+type AdminUserView struct {
+	ID          string     `json:"id" db:"id"`
+	Name        string     `json:"name" db:"name"`
 	Email       string     `json:"email" db:"email"`
 	Role        Role       `json:"role" db:"role"`
 	IsSuspended bool       `json:"is_suspended" db:"is_suspended"`

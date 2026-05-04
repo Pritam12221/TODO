@@ -2,9 +2,8 @@ package handlers
 
 import (
 	"TODO/database/dbhelper"
-	"fmt"
+	"TODO/utils"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,24 +12,10 @@ func GetAllTodos(c *gin.Context) {
 	status := c.Query("status")
 	search := c.Query("search")
 
-	pageStr := c.DefaultQuery("page", "1")
-	limitStr := c.DefaultQuery("limit", "10")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page <= 0 {
-		page = 1
-	}
-
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		limit = 10
-	}
-
-	offset := (page - 1) * limit
+	limit, offset := utils.SetPagination(c)
 
 	todos, err := dbhelper.GetAllTodos(status, search, limit, offset)
 	if err != nil {
-
-		fmt.Println("er")
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch todos"})
 		return
@@ -41,13 +26,29 @@ func GetAllTodos(c *gin.Context) {
 
 func SuspendUser(c *gin.Context) {
 
-	userID := c.Param("id")
-	if userID == "" {
+	currentUser, ok := utils.GetUserFromContext(c)
+	if !ok {
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+	targetUser := c.Param("id")
+	if targetUser == "" {
 		c.JSON(400, gin.H{"error": "user id required"})
 		return
 	}
 
-	err := dbhelper.SuspendUser(userID)
+	if targetUser == currentUser.ID {
+		c.JSON(403, gin.H{"error": "that's suicidal my friend"})
+		return
+	}
+
+	// fmt.Print(currentUser.IsSuspended)
+	// if currentUser.IsSuspended {
+	// 	c.JSON(400, gin.H{"error": "user already suspended"})
+	// 	return
+	// }
+
+	err := dbhelper.SuspendUser(targetUser)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to suspend user"})
 		return
@@ -60,11 +61,23 @@ func SuspendUser(c *gin.Context) {
 
 func UnsuspendUser(c *gin.Context) {
 
+	// currentUser, ok := utils.GetUserFromContext(c)
+	// if !ok {
+	// 	c.JSON(401, gin.H{"error": "unauthorized"})
+	// 	return
+	// }
+
 	userID := c.Param("id")
 	if userID == "" {
 		c.JSON(400, gin.H{"error": "user id required"})
 		return
 	}
+
+	// fmt.Print(currentUser.IsSuspended)
+	// if !currentUser.IsSuspended {
+	// 	c.JSON(400, gin.H{"error": "user already unsuspended"})
+	// 	return
+	// }
 
 	err := dbhelper.UnsuspendUser(userID)
 	if err != nil {
@@ -79,11 +92,7 @@ func UnsuspendUser(c *gin.Context) {
 
 func FetchAllUsers(c *gin.Context) {
 
-	limitStr := c.DefaultQuery("limit", "10")
-	offsetStr := c.DefaultQuery("offset", "0")
-
-	limit, _ := strconv.Atoi(limitStr)
-	offset, _ := strconv.Atoi(offsetStr)
+	limit, offset := utils.SetPagination(c)
 
 	users, err := dbhelper.FetchAllUsers(limit, offset)
 	if err != nil {

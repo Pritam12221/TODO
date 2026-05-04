@@ -8,6 +8,7 @@ import (
 	"fmt"
 )
 
+// need to add enum
 func GetAllTodos(status string, search string, limit int, offset int) ([]model.Todo, error) {
 
 	query := `
@@ -64,16 +65,14 @@ func GetAllTodos(status string, search string, limit int, offset int) ([]model.T
 }
 
 func SuspendUser(userID string) (err error) {
+
 	tx, err := db.Todo.Beginx()
 	if err != nil {
 		return err
 	}
 
 	defer func() {
-		if p := recover(); p != nil {
-			tx.Rollback()
-			panic(p)
-		} else if err != nil {
+		if err != nil {
 			tx.Rollback()
 		} else {
 			err = tx.Commit()
@@ -121,12 +120,11 @@ func UnsuspendUser(userID string) error {
 	return err
 }
 
-func FetchAllUsers(limit, offset int) ([]model.User, error) {
-	var users []model.User
+func FetchAllUsers(limit, offset int) ([]model.AdminUserView, error) {
+	var users []model.AdminUserView
 
-	SQL := `SELECT id, name, email, created_at,role
+	SQL := `SELECT id, name, email, created_at,role,is_suspended
         FROM users
-        WHERE archived_at IS NULL
         ORDER BY created_at DESC
         LIMIT $1 OFFSET $2;`
 

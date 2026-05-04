@@ -3,12 +3,12 @@ package handlers
 import (
 	"TODO/database/dbhelper"
 	model "TODO/models"
+	"TODO/utils"
 	util "TODO/utils"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -131,19 +131,7 @@ func GetTodos(c *gin.Context) {
 	status := c.Query("status")
 	search := c.Query("search")
 
-	pageStr := c.DefaultQuery("page", "1")
-	limitStr := c.DefaultQuery("limit", "10")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page <= 0 {
-		page = 1
-	}
-
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		limit = 10
-	}
-
-	offset := (page - 1) * limit
+	limit, offset := utils.SetPagination(c)
 
 	todos, err := dbhelper.GetTodosByStatus(user.ID, status, search, limit, offset)
 	if err != nil {
